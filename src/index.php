@@ -35,36 +35,83 @@
     </div>
 
     <script>
-        $(document).ready(function() {
-            $('#loginForm').on('submit', function(e) {
-                e.preventDefault(); 
-                
-                let username = $('#username').val();
-                let password = $('#password').val();
-                let btn = $('#btnSubmit');
-                let originalContent = btn.html();
+        $(document).ready(function () {
 
-                // เปลี่ยนสถานะปุ่มเป็นกำลังโหลด
-                btn.html('กำลังตรวจสอบ...').prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+            $('#loginForm').on('submit', function (e) {
+                e.preventDefault();
 
-                // จำลองการส่งข้อมูล (รอ 1 วินาที)
-                setTimeout(() => {
-                    btn.html(originalContent).prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+                const username = $('#username').val().trim();
+                const password = $('#password').val().trim();
+                const $btn     = $('#btnSubmit');
+                const originalContent = $btn.html();
 
-                    // เช็คเงื่อนไขจำลอง (ถ้าเป็น admin / 1234 ให้ผ่าน)
-                    if(username === 'admin' && password === '1234') {
-                        $.confirm({
-                            title: '🎉 สำเร็จ!', content: 'กำลังพาท่านไปหน้าจัดการข้อมูล...', type: 'green', theme: 'modern',
-                            buttons: { ok: { text: 'ไปที่ Dashboard', btnClass: 'btn-green' } }
+                // Validate ฝั่ง Client
+                if (!username || !password) {
+                    $.alert({
+                        title: '⚠️ แจ้งเตือน',
+                        content: 'กรุณากรอก Username และ Password',
+                        type: 'orange',
+                        theme: 'modern'
+                    });
+                    return;
+                }
+
+                // ปิดปุ่มระหว่าง Loading
+                $btn.html('กำลังตรวจสอบ...').prop('disabled', true).addClass('opacity-70 cursor-not-allowed');
+
+                // ยิง AJAX ไปที่ api/login_action.php
+                $.ajax({
+                    url: 'api/login_action.php',
+                    method: 'POST',
+                    data: { username: username, password: password },
+                    dataType: 'json',
+                    success: function (res) {
+                        if (res.success) {
+                            $.confirm({
+                                title: '🎉 สำเร็จ!',
+                                content: res.message,
+                                type: 'green',
+                                theme: 'modern',
+                                buttons: {
+                                    ok: {
+                                        text: 'ไปที่ Dashboard',
+                                        btnClass: 'btn-green',
+                                        action: function () {
+                                            window.location.href = res.redirect;
+                                        }
+                                    }
+                                }
+                            });
+                        } else {
+                            $.confirm({
+                                title: '🚨 เข้าสู่ระบบไม่สำเร็จ',
+                                content: res.message,
+                                type: 'red',
+                                theme: 'modern',
+                                buttons: {
+                                    tryAgain: {
+                                        text: 'ลองอีกครั้ง',
+                                        btnClass: 'btn-red'
+                                    }
+                                }
+                            });
+                            // คืนค่าปุ่ม
+                            $btn.html(originalContent).prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
+                        }
+                    },
+                    error: function () {
+                        $.alert({
+                            title: '❌ Connection Error',
+                            content: 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้ กรุณาลองใหม่',
+                            type: 'red',
+                            theme: 'modern'
                         });
-                    } else {
-                        $.confirm({
-                            title: '🚨 ข้อผิดพลาด!', content: 'ข้อมูลไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง', type: 'red', theme: 'modern',
-                            buttons: { tryAgain: { text: 'ลองอีกครั้ง', btnClass: 'btn-red' } }
-                        });
+                        $btn.html(originalContent).prop('disabled', false).removeClass('opacity-70 cursor-not-allowed');
                     }
-                }, 1000); 
+                });
+
             });
+
         });
     </script>
 </body>

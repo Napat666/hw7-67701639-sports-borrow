@@ -14,6 +14,10 @@ try {
     ];
     $conn = new PDO($dsn, $username, $password, $options);
 } catch (PDOException $e) {
-    die("🚨 เชื่อมต่อฐานข้อมูลไม่สำเร็จ: " . $e->getMessage());
+    error_log("DB Connection Error: " . $e->getMessage());
+    // ส่ง JSON กลับเพื่อไม่ให้ AJAX พัง
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['success' => false, 'message' => 'ไม่สามารถเชื่อมต่อฐานข้อมูลได้']);
+    exit;
 }
 ?>
